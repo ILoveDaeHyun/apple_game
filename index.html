@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>달콤한 과수원 사과게임</title>
+  <style>
+    :root {
+      --bg-sky: #a8e6cf;
+      --wood-dark: #6d4c41;
+      --wood-light: #8d6e63;
+      --wood-border: #4e342e;
+      --apple-red: #ff4d4d;
+      --apple-shadow: #c62828;
+      --apple-leaf: #4caf50;
+      --cell-width: 52px;
+      --cell-height: 32px;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: linear-gradient(180deg, #81d4fa 0%, #b2ebf2 35%, #c8e6c9 70%, #81c784 100%);
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #3e2723;
+      overflow-x: hidden;
+      padding: 20px 10px;
+    }
+
+    /* 과수원 장식 헤더 */
+    .header-area {
+      text-align: center;
+      margin-bottom: 15px;
+      position: relative;
+    }
+
+    .title-banner {
+      background: #fff8e1;
+      border: 4px solid var(--wood-dark);
+      border-radius: 24px;
+      padding: 8px 32px;
+      box-shadow: 0 6px 0 var(--wood-border), 0 10px 15px rgba(0,0,0,0.15);
+      display: inline-block;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #d84315;
+      text-shadow: 1px 1px 0 #ffe082;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .apple-icon {
+      width: 28px;
+      height: 28px;
+      vertical-align: middle;
+    }
+
+    /* 조작 및 상태 표시 패널 */
+    .dashboard {
+      background: #efebe9;
+      border: 4px solid var(--wood-dark);
+      border-radius: 18px;
+      padding: 12px 20px;
+      box-shadow: 0 5px 0 var(--wood-border), 0 8px 16px rgba(0,0,0,0.1);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      max-width: 820px;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+
+    .mode-selector {
+      display: flex;
+      gap: 6px;
+      background: #d7ccc8;
+      padding: 4px;
+      border-radius: 12px;
+    }
+
+    .mode-btn {
+      border: none;
+      background: transparent;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      color: #5d4037;
+      transition: all 0.2s ease;
+    }
+
+    .mode-btn.active {
+      background: #fff;
+      color: #d84315;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #ffffff;
+      padding: 6px 14px;
+      border-radius: 10px;
+      border: 2px solid #bcaaa4;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .stat-badge .label {
+      color: #795548;
+      font-size: 13px;
+    }
+
+    .stat-badge .value {
+      font-size: 18px;
+      color: #d84315;
+      min-width: 45px;
+      text-align: right;
+      font-family: monospace;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .game-btn {
+      background: #ffb300;
+      border: 2px solid #f57c00;
+      border-radius: 10px;
+      color: #3e2723;
+      padding: 7px 16px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #e65100;
+      transition: transform 0.1s, background-color 0.1s;
+    }
+
+    .game-btn:hover {
+      background: #ffc107;
+    }
+
+    .game-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 0 0 #e65100;
+    }
+
+    .game-btn.secondary {
+      background: #81c784;
+      border-color: #388e3c;
+      box-shadow: 0 3px 0 #2e7d32;
+    }
+
+    .game-btn.secondary:hover {
+      background: #a5d6a7;
+    }
+
+    .game-btn.secondary:active {
+      box-shadow: 0 0 0 #2e7d32;
+    }
+
+    /* 게임 보드 프레임 (나무 틀) */
+    .board-container {
+      position: relative;
+      background: #4a2810;
+      border: 10px solid #5d3a1a;
+      border-radius: 20px;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 0 10px 25px rgba(0,0,0,0.25);
+      padding: 12px;
+      touch-action: none;
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(17, var(--cell-width));
+      grid-template-rows: repeat(10, var(--cell-height));
+      gap: 3px;
+      background: #2b180d;
+      border-radius: 8px;
+      padding: 6px;
+      position: relative;
+    }
+
+    /* 사과 타일 */
+    .apple-cell {
+      position: relative;
+      width: var(--cell-width);
+      height: var(--cell-height);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .apple-svg {
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+      transition: transform 0.15s ease;
+    }
+
+    .apple-num {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-weight: 900;
+      font-size: 16px;
+      color: #ffd600;
+      text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+      pointer-events: none;
+    }
+
+    .apple-cell.empty {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .apple-cell.selected .apple-svg {
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 6px #ffe082) brightness(1.15);
+    }
+
+    .apple-cell.highlight-glow {
+      animation: apple-pop 0.3s ease-out;
+    }
+
+    @keyframes apple-pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(0); opacity: 0; }
+    }
+
+    /* 드래그 사각형 오버레이 */
+    .drag-selection-box {
+      position: absolute;
+      border: 2px dashed #ffeb3b;
+      background: rgba(255, 235, 59, 0.28);
+      pointer-events: none;
+      display: none;
+      border-radius: 6px;
+      z-index: 10;
+    }
+
+
+
+    /* 랭킹 / 최근 세션 기록 창 */
+    .records-panel {
+      margin-top: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 3px solid var(--wood-dark);
+      border-radius: 16px;
+      padding: 16px 24px;
+      width: 100%;
+      max-width: 820px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .records-panel h2 {
+      font-size: 18px;
+      color: #4e342e;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .records-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .records-table th {
+      background: #efebe9;
+      color: #5d4037;
+      padding: 8px;
+      border-bottom: 2px solid #bcaaa4;
+    }
+
+    .records-table td {
+      padding: 8px;
+      border-bottom: 1px solid #e0e0e0;
+      color: #37474f;
+    }
+
+    .records-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .empty-record {
+      color: #9e9e9e;
+      padding: 16px;
+    }
+
+    /* 일시정지 및 게임오버 모달 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-content {
+      background: #fff8e1;
+      border: 6px solid var(--wood-dark);
+      border-radius: 20px;
+      padding: 28px 40px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      max-width: 400px;
+      width: 90%;
+      animation: modal-enter 0.2s ease-out;
+    }
+
+    @keyframes modal-enter {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-content h3 {
+      font-size: 24px;
+      color: #d84315;
+      margin-bottom: 12px;
+    }
+
+    .modal-content p {
+      font-size: 15px;
+      margin-bottom: 20px;
+      color: #5d4037;
+      line-height: 1.5;
+    }
+
+    /* 반응형 크기 조절 */
+    @media (max-width: 992px) {
+      :root {
+        --cell-width: 38px;
+        --cell-height: 23px;
+      }
+      .apple-num {
+        font-size: 11px;
+      }
+      .dashboard {
+        gap: 10px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 과수원 타이틀 헤더 -->
+  <div class="header-area">
+    <div class="title-banner">
+      <h1>
+        <svg class="apple-icon" viewBox="0 0 100 100">
+          <ellipse cx="50" cy="58" rx="38" ry="36" fill="#ff4d4d"/>
+          <ellipse cx="40" cy="40" rx="12" ry="12" fill="#ff7675" opacity="0.4"/>
+          <path d="M50 25 C 50 12, 60 8, 65 6" stroke="#5d4037" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M50 20 C 60 12, 70 18, 72 24 C 62 26, 54 23, 50 20 Z" fill="#4caf50"/>
+        </svg>
+        달콤한 과수원 사과게임
+      </h1>
+    </div>
+  </div>
+
+  <!-- 대시보드 (모드 선택, 점수, 시간, 조작 버튼) -->
+  <div class="dashboard">
+    <div class="mode-selector">
+      <button class="mode-btn active" id="modeTimerBtn">타이머 (120초)</button>
+      <button class="mode-btn" id="modeStopwatchBtn">스톱워치 모드</button>
+    </div>
+
+    <div class="stat-badge">
+      <span class="label">점수</span>
+      <span class="value" id="scoreDisplay">0</span>
+    </div>
+
+    <div class="stat-badge">
+      <span class="label" id="timeLabel">남은 시간</span>
+      <span class="value" id="timeDisplay">02:00</span>
+    </div>
+
+    <div class="stat-badge">
+      <span class="label">남은 사과</span>
+      <span class="value" id="applesLeftDisplay">170</span>
+    </div>
+
+    <div class="btn-group">
+      <button class="game-btn secondary" id="pauseResumeBtn">일시정지</button>
+      <button class="game-btn" id="restartBtn">다시 시작</button>
+    </div>
+  </div>
+
+  <!-- 메인 보드 -->
+  <div class="board-container" id="boardContainer">
+    <div class="drag-selection-box" id="selectionBox"></div>
+    <div class="board-grid" id="grid"></div>
+  </div>
+
+  <!-- 이번 세션 기록 / 랭킹 패널 -->
+  <div class="records-panel">
+    <h2>
+      <span>🏆 이번 세션 플레이 기록</span>
+      <button class="game-btn secondary" id="clearRecordsBtn" style="font-size: 12px; padding: 4px 10px;">기록 비우기</button>
+    </h2>
+    <table class="records-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>게임 모드</th>
+          <th>점수 (수확한 사과)</th>
+          <th>걸린 / 남은 시간</th>
+          <th>일시</th>
+        </tr>
+      </thead>
+      <tbody id="recordsTableBody">
+        <tr>
+          <td colspan="5" class="empty-record">아직 완료된 플레이 기록이 없습니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 일시정지 모달 -->
+  <div class="modal-overlay" id="pauseModal">
+    <div class="modal-content">
+      <h3>⏸️ 일시 정지</h3>
+      <p>과수원에서 잠시 쉬어가는 중입니다.<br>준비가 되면 계속하기 버튼을 눌러주세요.</p>
+      <button class="game-btn" id="resumeModalBtn">게임 계속하기</button>
+    </div>
+  </div>
+
+  <!-- 게임 완료 / 오버 모달 -->
+  <div class="modal-overlay" id="gameOverModal">
+    <div class="modal-content">
+      <h3 id="gameOverTitle">🎉 게임 종료!</h3>
+      <p id="gameOverDesc">결과가 집계되었습니다.</p>
+      <button class="game-btn" id="gameOverRestartBtn">새로운 게임 시작</button>
+    </div>
+  </div>
+
+  <script>
+    // --- 게임 상태 및 상수 ---
+    const ROWS = 10;
+    const COLS = 17;
+    const TOTAL_APPLES = ROWS * COLS; // 170
+    const DEFAULT_TIMER_SECONDS = 120;
+
+    let currentMode = 'timer'; // 'timer' 또는 'stopwatch'
+    let gridData = []; // { id, row, col, value, removed }
+    let score = 0;
+    let applesLeft = TOTAL_APPLES;
+    let timerDuration = DEFAULT_TIMER_SECONDS;
+    let stopwatchSeconds = 0;
+    let timerInterval = null;
+    let isPaused = false;
+    let isGameOver = false;
+
+    let sessionRecords = [];
+
+    // 드래그 상태
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let selectedCells = [];
+
+    // DOM 요소
+    const gridEl = document.getElementById('grid');
+    const boardContainer = document.getElementById('boardContainer');
+    const selectionBox = document.getElementById('selectionBox');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const timeLabel = document.getElementById('timeLabel');
+    const applesLeftDisplay = document.getElementById('applesLeftDisplay');
+    const pauseResumeBtn = document.getElementById('pauseResumeBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const modeTimerBtn = document.getElementById('modeTimerBtn');
+    const modeStopwatchBtn = document.getElementById('modeStopwatchBtn');
+    const recordsTableBody = document.getElementById('recordsTableBody');
+    const clearRecordsBtn = document.getElementById('clearRecordsBtn');
+
+    const pauseModal = document.getElementById('pauseModal');
+    const resumeModalBtn = document.getElementById('resumeModalBtn');
+    const gameOverModal = document.getElementById('gameOverModal');
+    const gameOverTitle = document.getElementById('gameOverTitle');
+    const gameOverDesc = document.getElementById('gameOverDesc');
+    const gameOverRestartBtn = document.getElementById('gameOverRestartBtn');
+
+    // --- 사과(MLB 로고) SVG 템플릿 ---
+    function createAppleSVG() {
+      return `
+        <svg class="apple-svg" viewBox="0 0 100 56">
+          <defs>
+            <clipPath id="mlb-clip">
+              <rect x="0" y="0" width="100" height="56" rx="9" ry="9" />
+            </clipPath>
+          </defs>
+          <g clip-path="url(#mlb-clip)">
+            <!-- 네이비 좌측 배경 -->
+            <rect x="0" y="0" width="100" height="56" fill="#041E42"/>
+            <!-- 레드 우측 배경 (대각선 분할) -->
+            <path d="M 58 0 L 100 0 L 100 56 L 81 56 Z" fill="#BF0D3E"/>
+            <!-- 좌하단 흰색 야구공 -->
+            <circle cx="14" cy="41" r="4.2" fill="#FFFFFF"/>
+            <!-- 타자 실루엣 & 배트 -->
+            <!-- 배트 -->
+            <polygon points="58,0 62,0 87.5,33.5 83.5,36" fill="#FFFFFF"/>
+            <!-- 타자 머리/헬멧 -->
+            <ellipse cx="52" cy="18" rx="11" ry="9.5" fill="#FFFFFF"/>
+            <polygon points="41,20 46,13 41,23 35,22" fill="#FFFFFF"/> <!-- 챙 -->
+            <polygon points="43,22 41,27 44,28" fill="#FFFFFF"/> <!-- 턱선 -->
+            <!-- 상체 & 타격 폼 -->
+            <path d="M 43 28 C 43 38, 35 44, 35 56 L 81 56 C 81 53, 85 51, 88 47 C 94 39, 83 31, 76 29 C 68 26, 62 26, 62 26 C 62 30, 48 30, 43 28 Z" fill="#FFFFFF"/>
+          </g>
+        </svg>
+      `;
+    }
+
+    // --- 게임 초기화 ---
+    function initGame() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      isPaused = false;
+      isGameOver = false;
+      score = 0;
+      applesLeft = TOTAL_APPLES;
+      scoreDisplay.textContent = '0';
+      applesLeftDisplay.textContent = applesLeft;
+      pauseResumeBtn.textContent = '일시정지';
+      pauseModal.style.display = 'none';
+      gameOverModal.style.display = 'none';
+      selectionBox.style.display = 'none';
+
+      if (currentMode === 'timer') {
+        timerDuration = DEFAULT_TIMER_SECONDS;
+        timeLabel.textContent = '남은 시간';
+        timeDisplay.textContent = formatTime(timerDuration);
+      } else {
+        stopwatchSeconds = 0;
+        timeLabel.textContent = '경과 시간';
+        timeDisplay.textContent = formatTime(stopwatchSeconds);
+      }
+
+      // 사과 판 생성 (1~9 랜덤 숫자)
+      gridData = [];
+      gridEl.innerHTML = '';
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const val = Math.floor(Math.random() * 9) + 1;
+          const cellObj = {
+            id: `${r}-${c}`,
+            row: r,
+            col: c,
+            value: val,
+            removed: false
+          };
+          gridData.push(cellObj);
+
+          const cellEl = document.createElement('div');
+          cellEl.className = 'apple-cell';
+          cellEl.id = `cell-${r}-${c}`;
+          cellEl.dataset.row = r;
+          cellEl.dataset.col = c;
+          cellEl.innerHTML = `
+            ${createAppleSVG()}
+            <span class="apple-num">${val}</span>
+          `;
+          gridEl.appendChild(cellEl);
+        }
+      }
+
+      startTimer();
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (isPaused || isGameOver) return;
+
+        if (currentMode === 'timer') {
+          timerDuration--;
+          timeDisplay.textContent = formatTime(timerDuration);
+          if (timerDuration <= 0) {
+            endGame(false, '시간 종료! 120초가 모두 지났습니다.');
+          }
+        } else {
+          stopwatchSeconds++;
+          timeDisplay.textContent = formatTime(stopwatchSeconds);
+        }
+      }, 1000);
+    }
+
+    function togglePause() {
+      if (isGameOver) return;
+      isPaused = !isPaused;
+      if (isPaused) {
+        pauseResumeBtn.textContent = '계속하기';
+        pauseModal.style.display = 'flex';
+      } else {
+        pauseResumeBtn.textContent = '일시정지';
+        pauseModal.style.display = 'none';
+      }
+    }
+
+    function endGame(isClear, reason) {
+      isGameOver = true;
+      clearInterval(timerInterval);
+
+      // 이번 세션 기록에 추가
+      const record = {
+        mode: currentMode === 'timer' ? '타이머 모드' : '스톱워치 모드',
+        score: score,
+        time: currentMode === 'timer' ? `120초 중 ${120 - timerDuration}초 사용` : `${stopwatchSeconds}초 경과`,
+        date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      };
+      sessionRecords.unshift(record);
+      renderRecords();
+
+      gameOverTitle.textContent = isClear ? '🏆 과수원 정복 완료!' : '🌾 게임 종료!';
+      gameOverDesc.innerHTML = `${reason}<br><br><strong>최종 점수: ${score}점 (사과 ${score}개 수확)</strong>`;
+      gameOverModal.style.display = 'flex';
+    }
+
+    function renderRecords() {
+      if (sessionRecords.length === 0) {
+        recordsTableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="empty-record">아직 완료된 플레이 기록이 없습니다.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      recordsTableBody.innerHTML = sessionRecords.map((rec, idx) => `
+        <tr>
+          <td><strong>${idx + 1}</strong></td>
+          <td>${rec.mode}</td>
+          <td><span style="color:#d84315; font-weight:bold;">${rec.score}점</span></td>
+          <td>${rec.time}</td>
+          <td>${rec.date}</td>
+        </tr>
+      `).join('');
+    }
+
+    // --- 드래그 사각형 선택 로직 ---
+    function getPointerPos(e) {
+      const gridRect = gridEl.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - gridRect.left,
+        y: clientY - gridRect.top
+      };
+    }
+
+    function onDragStart(e) {
+      if (isPaused || isGameOver) return;
+      isDragging = true;
+      const pos = getPointerPos(e);
+      dragStartX = pos.x;
+      dragStartY = pos.y;
+
+      updateSelectionBox(dragStartX, dragStartY, dragStartX, dragStartY);
+      selectionBox.style.display = 'block';
+      updateSelection();
+    }
+
+    function onDragMove(e) {
+      if (!isDragging) return;
+      const pos = getPointerPos(e);
+      updateSelectionBox(dragStartX, dragStartY, pos.x, pos.y);
+      updateSelection();
+    }
+
+    function onDragEnd() {
+      if (!isDragging) return;
+      isDragging = false;
+      selectionBox.style.display = 'none';
+
+      // 선택된 사과들의 합 계산
+      let currentSum = 0;
+      selectedCells.forEach(item => {
+        currentSum += item.value;
+      });
+
+      if (currentSum === 10 && selectedCells.length > 0) {
+        // 합이 10인 경우: 제거 및 점수 획득
+        selectedCells.forEach(item => {
+          item.removed = true;
+          const cellEl = document.getElementById(`cell-${item.row}-${item.col}`);
+          if (cellEl) {
+            cellEl.classList.add('highlight-glow');
+            setTimeout(() => {
+              cellEl.classList.remove('highlight-glow');
+              cellEl.classList.add('empty');
+            }, 250);
+          }
+        });
+
+        score += selectedCells.length;
+        applesLeft -= selectedCells.length;
+        scoreDisplay.textContent = score;
+        applesLeftDisplay.textContent = applesLeft;
+
+        // 클리어 여부 확인
+        if (applesLeft === 0) {
+          endGame(true, '과수원의 모든 사과를 수확하셨습니다! 대단합니다!');
+        }
+      }
+
+      // 선택 해제
+      selectedCells = [];
+      document.querySelectorAll('.apple-cell.selected').forEach(el => {
+        el.classList.remove('selected');
+      });
+    }
+
+    function updateSelectionBox(x1, y1, x2, y2) {
+      const left = Math.min(x1, x2);
+      const top = Math.min(y1, y2);
+      const width = Math.abs(x2 - x1);
+      const height = Math.abs(y2 - y1);
+
+      selectionBox.style.left = `${left}px`;
+      selectionBox.style.top = `${top}px`;
+      selectionBox.style.width = `${width}px`;
+      selectionBox.style.height = `${height}px`;
+    }
+
+    function updateSelection() {
+      const boxRect = selectionBox.getBoundingClientRect();
+      const newlySelected = [];
+
+      gridData.forEach(item => {
+        if (item.removed) return;
+        const cellEl = document.getElementById(`cell-${item.row}-${item.col}`);
+        if (!cellEl) return;
+
+        const cellRect = cellEl.getBoundingClientRect();
+        // 충돌/교차 검사 (중심점 또는 일정 영역이 사각형 내부에 들어왔는지)
+        const isIntersecting = !(
+          cellRect.right < boxRect.left ||
+          cellRect.left > boxRect.right ||
+          cellRect.bottom < boxRect.top ||
+          cellRect.top > boxRect.bottom
+        );
+
+        if (isIntersecting) {
+          cellEl.classList.add('selected');
+          newlySelected.push(item);
+        } else {
+          cellEl.classList.remove('selected');
+        }
+      });
+
+      selectedCells = newlySelected;
+    }
+
+    // --- 이벤트 리스너 연결 ---
+    gridEl.addEventListener('mousedown', onDragStart);
+    window.addEventListener('mousemove', onDragMove);
+    window.addEventListener('mouseup', onDragEnd);
+
+    // 모바일 터치 이벤트
+    gridEl.addEventListener('touchstart', (e) => {
+      onDragStart(e);
+    }, { passive: false });
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging) e.preventDefault();
+      onDragMove(e);
+    }, { passive: false });
+    window.addEventListener('touchend', onDragEnd);
+
+    pauseResumeBtn.addEventListener('click', togglePause);
+    resumeModalBtn.addEventListener('click', togglePause);
+    restartBtn.addEventListener('click', initGame);
+    gameOverRestartBtn.addEventListener('click', initGame);
+
+    modeTimerBtn.addEventListener('click', () => {
+      if (currentMode === 'timer') return;
+      currentMode = 'timer';
+      modeTimerBtn.classList.add('active');
+      modeStopwatchBtn.classList.remove('active');
+      initGame();
+    });
+
+    modeStopwatchBtn.addEventListener('click', () => {
+      if (currentMode === 'stopwatch') return;
+      currentMode = 'stopwatch';
+      modeStopwatchBtn.classList.add('active');
+      modeTimerBtn.classList.remove('active');
+      initGame();
+    });
+
+    clearRecordsBtn.addEventListener('click', () => {
+      sessionRecords = [];
+      renderRecords();
+    });
+
+    // 시작
+    initGame();
+  </script>
+</body>
+</html>
+
